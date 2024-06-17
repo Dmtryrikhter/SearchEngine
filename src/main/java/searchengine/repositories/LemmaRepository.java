@@ -5,12 +5,9 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
-import searchengine.model.Index;
 import searchengine.model.Lemma;
 
-import java.util.List;
+public interface LemmaRepository extends JpaRepository<Lemma, Integer> {
+    Lemma findLemmaByLemma(String name);
 
-public interface IndexRepository extends JpaRepository<Index, Integer> {
-
-    List<Index> findIndexByPageId(Integer pageId);
 }

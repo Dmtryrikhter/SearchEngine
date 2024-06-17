@@ -1,10 +1,14 @@
+connection-settings:
+  connections:
+    - userAgent: Mozilla / 5.0 (Windows NT 10.0; Win64; x64) AppleWebKit / 537.36 (KHTML, как Gecko) Chrome / 122.0.0.0 YaBrowser / 24.4.0.0 Safari /537.36
+      referrer: http://www.google.com
 indexing-settings:
   sites:
-    - url: https://www.lenta.ru/
+    - url: https://lenta.ru/
       name: Лента.ру
-    - url: https://www.skillbox.ru/
+    - url: https://skillbox.ru/
       name: Skillbox
-    - url: https://www.playback.ru/
+    - url: https://playback.ru/
       name: PlayBack.Ru
 server:
   port: 8080

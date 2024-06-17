@@ -4,14 +4,15 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import searchengine.config.ConnectionList;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.RecursiveTask;
-
 public class SiteCrawler extends RecursiveTask<Set<String>> {
+    private final ConnectionList connectionList = new ConnectionList();
     private final String url;
     private final Set<String> resultSet = new LinkedHashSet<>();
 
@@ -23,9 +24,8 @@ public class SiteCrawler extends RecursiveTask<Set<String>> {
         Set<String> set = new LinkedHashSet<>();
         try {
             Document doc = Jsoup.connect(url).timeout(40 * 10000)
-                    .userAgent("Mozilla / 5.0 (Windows NT 10.0; Win64; x64) AppleWebKit / " +
-                            "537.36 (KHTML, как Gecko) Chrome / 122.0.0.0 YaBrowser / 24.4.0.0 Safari /537.36")
-                    .referrer("http://www.google.com")
+                    .userAgent(connectionList.getConnections().get(0).getUserAgent())
+                    .referrer(connectionList.getConnections().get(0).getReferrer())
                     .get();
             Elements links = doc.select("a[href]");
             for (Element element : links) {
