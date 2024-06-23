@@ -12,12 +12,13 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.RecursiveTask;
 public class SiteCrawler extends RecursiveTask<Set<String>> {
-    private final ConnectionList connectionList = new ConnectionList();
+    private final ConnectionList connectionList;
     private final String url;
     private final Set<String> resultSet = new LinkedHashSet<>();
 
-    public SiteCrawler(String url) {
+    public SiteCrawler(String url, ConnectionList connectionList) {
         this.url = url;
+        this.connectionList = connectionList;
     }
 
     protected Set<String> connect() {
@@ -52,7 +53,7 @@ public class SiteCrawler extends RecursiveTask<Set<String>> {
                     resultSet.add(link);
                 } else {
                     resultSet.add(link);
-                    SiteCrawler p = new SiteCrawler(link.trim());
+                    SiteCrawler p = new SiteCrawler(link.trim(), connectionList);
                     p.fork();
                     tasks.add(p);
                 }

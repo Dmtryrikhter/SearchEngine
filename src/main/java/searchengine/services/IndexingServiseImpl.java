@@ -5,6 +5,7 @@ import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;
+import searchengine.config.ConnectionList;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.dto.indexing.ResponseIndexing;
@@ -29,8 +30,8 @@ public class IndexingServiseImpl implements IndexingService{
     private final SiteRepository siteRepository;
     private final PageRepository pageRepository;
     private final LemmaRepository lemmaRepository;
+    private final ConnectionList connectionList;
     private boolean stop = false;
-    private List<Page> pageList = new ArrayList<>();
     ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
 
     @Override
@@ -78,7 +79,7 @@ public class IndexingServiseImpl implements IndexingService{
         } else {
             for (Site site : sitesList.getSites()) {
                 if (pageLink.contains(site.getUrl())) {
-                    pageRepository.save(pageProcessing(pageLink, connection));
+                    pageRepository.save(pageProcessing(connection));
                     try {
                         Document document = connection.get();
                         Page page = pageRepository.findAllPageByPath(pageLink.substring(pageLink.lastIndexOf('/'))).get(0).get();
@@ -98,7 +99,7 @@ public class IndexingServiseImpl implements IndexingService{
         return responseIndexing;
     }
 
-    public Page pageProcessing(String pageLink, Connection connection) {
+    public Page pageProcessing(Connection connection) {
         try {
             Document doc = connection.get();
             Page page = new Page();
@@ -134,35 +135,27 @@ public class IndexingServiseImpl implements IndexingService{
         if (!siteRepository.findAllSiteByUrl(site.getUrl()).isEmpty()) {
             siteRepository.deleteSiteByName(site.getName());
             siteIndexing(site);
+
         }else {
             SiteEntity siteEntity1 = new SiteEntity();
-            SiteCrawler siteCrawler = new SiteCrawler(site.getUrl());
+            SiteCrawler siteCrawler = new SiteCrawler(site.getUrl(), connectionList);
             siteEntity1.setName(site.getName());
             siteEntity1.setUrl(site.getUrl());
             siteEntity1.setStatusTime(LocalDateTime.now());
             siteEntity1.setStatus("INDEXING");
             siteRepository.save(siteEntity1);
             Set<String> invoke = forkJoinPool.invoke(siteCrawler);
-            System.out.println(invoke);
             for (String pageLink : invoke) {
                 if (stop) {
                     break;
                 }
-                try {
-                    Connection connection = Jsoup.connect(pageLink);
-                    pageList.add(pageProcessing(pageLink, connection));
-                    Thread.sleep(150);
-                } catch (InterruptedException exception) {
-                    exception.printStackTrace();
-                }
+                pageIndexing(pageLink);
             }
-
-            pageRepository.saveAll(pageList);
-            if (forkJoinPool.isQuiescent()) {
+            if (!forkJoinPool.isTerminated()) {
                 siteEntity1.setStatusTime(LocalDateTime.now());
                 siteEntity1.setStatus("INDEXED");
                 siteRepository.save(siteEntity1);
-            }else if(!forkJoinPool.isTerminated()){
+            }else if(forkJoinPool.isTerminated()){
                 siteEntity1.setStatusTime(LocalDateTime.now());
                 siteEntity1.setStatus("FAILED");
                 siteRepository.save(siteEntity1);
