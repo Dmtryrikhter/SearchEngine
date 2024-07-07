@@ -4,14 +4,13 @@ connection-settings:
       referrer: http://www.google.com
 indexing-settings:
   sites:
-    - url: https://lenta.ru/
-      name: Лента.ру
     - url: https://skillbox.ru/
       name: Skillbox
-    - url: https://playback.ru/
-      name: PlayBack.Ru
+    - url: https://lenta.ru/
+      name: Lenta
     - url: https://sendel.ru/
-      name: Sendel
+      name: sendel
+
 server:
   port: 8080
 

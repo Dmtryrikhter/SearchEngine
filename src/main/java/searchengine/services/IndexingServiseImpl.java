@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
 import searchengine.config.ConnectionList;
 import searchengine.config.Site;
@@ -32,8 +31,9 @@ public class IndexingServiseImpl implements IndexingService{
     private final PageRepository pageRepository;
     private final LemmaRepository lemmaRepository;
     private final ConnectionList connectionList;
-    private final Logger logger;
+
     private boolean stop = false;
+    private StringBuilder regex;
     ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
 
     @Override
@@ -73,7 +73,9 @@ public class IndexingServiseImpl implements IndexingService{
         Connection connection = Jsoup.connect(pageLink);
         if (!pageRepository.findAllPageByPath(pageLink.substring(pageLink.lastIndexOf('/'))).isEmpty()) {
             Page p = pageRepository.findAllPageByPath(pageLink.substring(pageLink.lastIndexOf('/'))).get(0).get();
-            pageRepository.deletePageByPath(pageLink.substring(pageLink.lastIndexOf('/')));
+            regex = new StringBuilder();
+            regex.append("(^").append(siteRepository.findById(p.getSiteId()).get().getUrl()).append(")");
+            pageRepository.deletePageByPath(pageLink.replaceAll(regex.toString(),""));
             List<Index> indexes = indexRepository.findIndexByPageId(p.getId());
             indexes.forEach(index -> lemmaRepository.deleteById(index.getLemmaId()));
             indexes.forEach(index -> indexRepository.deleteById(index.getId()));
@@ -81,7 +83,7 @@ public class IndexingServiseImpl implements IndexingService{
         } else {
             for (Site site : sitesList.getSites()) {
                 if (pageLink.contains(site.getUrl())) {
-                    pageRepository.save(pageProcessing(connection));
+                    pageRepository.save(pageProcessing(connection, site));
                     try {
                         Document document = connection.get();
                         Page page = pageRepository.findAllPageByPath(pageLink.substring(pageLink.lastIndexOf('/'))).get(0).get();
@@ -98,35 +100,34 @@ public class IndexingServiseImpl implements IndexingService{
                 }
             }
         }
-        logger.info("FINISH");
         return responseIndexing;
 
     }
 
-    public Page pageProcessing(Connection connection) {
+    public Page pageProcessing(Connection connection, Site site) {
         try {
             Document doc = connection.get();
             Page page = new Page();
             page.setCode(connection.response().statusCode());
-            page.setPath(doc.baseUri().substring(doc.baseUri().lastIndexOf('/')));
+            regex = new StringBuilder();
+            regex.append("(^").append(site.getUrl()).append(")");
+            page.setPath(doc.baseUri().replaceAll(regex.toString(),""));
             page.setContent(doc.toString());
             StringBuilder sb = new StringBuilder();
             sb.append(doc.baseUri().split("/")[0])
                     .append("//").append(doc.baseUri().split("/")[1])
                     .append(doc.baseUri().split("/")[2]).append("/");
             int siteId = 0;
-            for (Site site : sitesList.getSites()) {
-                if (!siteRepository.findAllSiteByUrl(sb.toString()).isEmpty()) {
-                    siteId = siteRepository.findAllSiteByUrl(sb.toString()).get(0).get().getId();
-                } else if (siteRepository.findAllSiteByUrl(sb.toString()).isEmpty()) {
-                    SiteEntity site1 = new SiteEntity();
-                    site1.setUrl(sb.toString());
-                    site1.setName(site.getName());
-                    site1.setStatusTime(LocalDateTime.now());
-                    site1.setStatus("INDEXED");
-                    siteRepository.save(site1);
-                    siteId = siteRepository.findAllSiteByUrl(sb.toString()).get(0).get().getId();
-                }
+            if (!siteRepository.findAllSiteByUrl(sb.toString()).isEmpty()) {
+                siteId = siteRepository.findAllSiteByUrl(sb.toString()).get(0).get().getId();
+            } else if (siteRepository.findAllSiteByUrl(sb.toString()).isEmpty()) {
+                SiteEntity site1 = new SiteEntity();
+                site1.setUrl(sb.toString());
+                site1.setName(site.getName());
+                site1.setStatusTime(LocalDateTime.now());
+                site1.setStatus("INDEXED");
+                siteRepository.save(site1);
+                siteId = siteRepository.findAllSiteByUrl(sb.toString()).get(0).get().getId();
             }
             page.setSiteId(siteId);
             return page;

@@ -15,6 +15,7 @@ import java.util.Optional;
 
 public interface PageRepository extends JpaRepository<Page, Integer> {
     List<Optional<Page>> findAllPageByPath(String path);
+    List<Optional<Page>> findAllBySiteId(Integer siteId);
     @Transactional
     @Modifying
     @Query(nativeQuery = true, value = "DELETE FROM page p WHERE p.path = path;")
