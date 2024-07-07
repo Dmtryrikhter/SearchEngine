@@ -13,4 +13,5 @@ import java.util.List;
 public interface IndexRepository extends JpaRepository<Index, Integer> {
 
     List<Index> findIndexByPageId(Integer pageId);
+    List<Index> findAllByLemmaId(Integer lemmaId);
 }

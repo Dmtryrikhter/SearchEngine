@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
 import searchengine.config.ConnectionList;
 import searchengine.config.Site;
@@ -31,6 +32,7 @@ public class IndexingServiseImpl implements IndexingService{
     private final PageRepository pageRepository;
     private final LemmaRepository lemmaRepository;
     private final ConnectionList connectionList;
+    private final Logger logger;
     private boolean stop = false;
     ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
 
@@ -96,7 +98,9 @@ public class IndexingServiseImpl implements IndexingService{
                 }
             }
         }
+        logger.info("FINISH");
         return responseIndexing;
+
     }
 
     public Page pageProcessing(Connection connection) {
@@ -149,7 +153,7 @@ public class IndexingServiseImpl implements IndexingService{
                 if (stop) {
                     break;
                 }
-                pageIndexing(pageLink);
+                forkJoinPool.submit(() -> pageIndexing(pageLink));
             }
             if (!forkJoinPool.isTerminated()) {
                 siteEntity1.setStatusTime(LocalDateTime.now());
