@@ -9,6 +9,8 @@ import searchengine.services.IndexingService;
 import searchengine.services.SearchService;
 import searchengine.services.StatisticsService;
 
+import java.io.IOException;
+
 @RestController
 @RequestMapping("/api")
 public class ApiController {
@@ -36,7 +38,7 @@ public class ApiController {
         return ResponseEntity.ok(indexingService.stopIndexing());
     }
     @PostMapping("/indexPage")
-    public ResponseEntity<ResponseIndexing> pageIndexing(@RequestParam String url) {
+    public ResponseEntity<ResponseIndexing> pageIndexing(@RequestParam String url) throws IOException {
         return ResponseEntity.ok(indexingService.pageIndexing(url));
     }
     @GetMapping("/search")

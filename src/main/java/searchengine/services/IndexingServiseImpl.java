@@ -68,11 +68,12 @@ public class IndexingServiseImpl implements IndexingService{
         return responseIndexing;
     }
     @Override
-    public ResponseIndexing pageIndexing(String pageLink)  {
+    public ResponseIndexing pageIndexing(String pageLink) throws IOException {
         ResponseIndexing responseIndexing = new ResponseIndexing();
         Connection connection = Jsoup.connect(pageLink);
-        if (!pageRepository.findAllPageByPath(pageLink.substring(pageLink.lastIndexOf('/'))).isEmpty()) {
-            Page p = pageRepository.findAllPageByPath(pageLink.substring(pageLink.lastIndexOf('/'))).get(0).get();
+        String path = pageLink.substring(8);
+        if (!pageRepository.findAllPageByPath(path.substring(path.indexOf('/'))).isEmpty()) {
+            Page p = pageRepository.findAllPageByPath(path.substring(path.indexOf('/'))).get(0);
             regex = new StringBuilder();
             regex.append("(^").append(siteRepository.findById(p.getSiteId()).get().getUrl()).append(")");
             pageRepository.deletePageByPath(pageLink.replaceAll(regex.toString(),""));
@@ -84,13 +85,9 @@ public class IndexingServiseImpl implements IndexingService{
             for (Site site : sitesList.getSites()) {
                 if (pageLink.contains(site.getUrl())) {
                     pageRepository.save(pageProcessing(connection, site));
-                    try {
-                        Document document = connection.get();
-                        Page page = pageRepository.findAllPageByPath(pageLink.substring(pageLink.lastIndexOf('/'))).get(0).get();
-                        lemmasAndIndexProcessing(document.text(), page.getSiteId(), page.getId());
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+                    Document document = connection.get();
+                    Page page = pageRepository.findAllPageByPath(path.substring(path.indexOf('/'))).get(0);
+                    lemmasAndIndexProcessing(document.text(), page.getSiteId(), page.getId());
                     responseIndexing.setResult(true);
                     responseIndexing.setMessage("");
                 } else {

@@ -14,7 +14,7 @@ import java.util.Optional;
 
 
 public interface PageRepository extends JpaRepository<Page, Integer> {
-    List<Optional<Page>> findAllPageByPath(String path);
+    List<Page> findAllPageByPath(String path);
     List<Optional<Page>> findAllBySiteId(Integer siteId);
     @Transactional
     @Modifying
